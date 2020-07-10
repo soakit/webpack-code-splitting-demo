@@ -10,8 +10,8 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, './dist'),
     // publicPath: '/dist/',
-    filename: '[name].js',
-    chunkFilename: '[name].chunk.js',
+    filename: '[name].[chunkhash:4].js',
+    chunkFilename: '[name].[chunkhash:4].chunk.js',
   },
   module: {
     rules: [
@@ -65,26 +65,29 @@ if (process.env.NODE_ENV === 'production') {
   module.exports.plugins = (module.exports.plugins || []).concat([
     new BundleAnalyzerPlugin(),
 
+    // node_modules的提取成vendor包
     new webpack.optimize.CommonsChunkPlugin({
-      name: 'vendor',
+      name: 'vendors',
       minChunks: ({ resource }) => (
         resource &&
         resource.indexOf('node_modules') >= 0 &&
         resource.match(/\.js$/)
       ),
     }),
-
+    // 懒加载的node_modules模块
     new webpack.optimize.CommonsChunkPlugin({
-      async: 'common-in-lazy',
+      // Webpack 2.5 以后 async chunk 需要指定 name。和 entry 同名
+      name: 'app',
+      async: 'vendors-lazy',
       minChunks: ({ resource } = {}) => (
         resource &&
         resource.includes('node_modules') &&
         /axios/.test(resource)
       ),
     }),
-
+    // 使用了两次以上的
     new webpack.optimize.CommonsChunkPlugin({
-      async: 'used-twice',
+      async: 'components',
       minChunks: (module, count) => (
         count >= 2
       ),
